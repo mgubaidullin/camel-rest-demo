@@ -17,6 +17,9 @@ public class ServiceRoute extends EndpointRouteBuilder {
                 .apiContextPath("api-doc")
                 .bindingMode(RestBindingMode.json);
 
+//        curl localhost:8080/transactions
+//        curl -X POST -H "Content-Type: application/json" --data '{"id":1,"amount":1000,"description":"Demo"}' http://localhost:8080/transactions
+
         rest("/")
                 .get("/transactions").type(ServiceDto.class).produces("application/json").to("direct:getAll")
                 .post("/transactions").type(ServiceDto.class).consumes("application/json").produces("application/json").to("direct:post");
