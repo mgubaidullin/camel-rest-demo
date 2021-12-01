@@ -1,5 +1,7 @@
 package org.example.rest;
 
+import io.vertx.core.json.Json;
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
 
@@ -17,23 +19,18 @@ public class ServiceRoute extends EndpointRouteBuilder {
                 .apiContextPath("api-doc")
                 .bindingMode(RestBindingMode.json);
 
-//        curl localhost:8080/transactions
-//        curl -X POST -H "Content-Type: application/json" --data '{"id":1,"amount":1000,"description":"Demo"}' http://localhost:8080/transactions
+//        curl localhost:8080/version
 
         rest("/")
-                .get("/transactions").type(ServiceDto.class).produces("application/json").to("direct:getAll")
-                .post("/transactions").type(ServiceDto.class).consumes("application/json").produces("application/json").to("direct:post");
-        
-        from(direct("getAll"))
-                .setBody(constant(List.of(new ServiceDto(1l, new BigDecimal(1000), "Demo"))))
-        	.log("${body}");
-        
-        from(direct("post"))
-    	    .log("${body}")
-                .process(exchange -> {
-                    ServiceDto dto = exchange.getIn().getBody(ServiceDto.class);
-                    System.out.println(dto.getId());
-                });
+                .get("/version").produces("application/json").to("direct:version");
+
+        from(direct("version"))
+                .removeHeader(Exchange.HTTP_URI)
+                .removeHeader(Exchange.HTTP_PATH)
+                .to("https://gorest.co.in/public/v1/users/123/posts")
+                .unmarshal().json()
+                .log("${body}");
+
     }
     
 }
