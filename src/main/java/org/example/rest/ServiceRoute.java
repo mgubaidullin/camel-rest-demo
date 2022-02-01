@@ -1,13 +1,11 @@
 package org.example.rest;
 
-import io.vertx.core.json.Json;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.endpoint.EndpointRouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.math.BigDecimal;
-import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class ServiceRoute extends EndpointRouteBuilder {
@@ -19,18 +17,30 @@ public class ServiceRoute extends EndpointRouteBuilder {
                 .apiContextPath("api-doc")
                 .bindingMode(RestBindingMode.json);
 
-//        curl localhost:8080/version
-
         rest("/")
-                .get("/version").produces("application/json").to("direct:version");
+                .put("/messages").consumes("application/json")
+                .to("direct:messages");
 
-        from(direct("version"))
-                .removeHeader(Exchange.HTTP_URI)
-                .removeHeader(Exchange.HTTP_PATH)
-                .to("https://gorest.co.in/public/v1/users/123/posts")
-                .unmarshal().json()
-                .log("${body}");
 
+        from(direct("messages"))
+                .process(this::setTransactionData)
+                .log("${headers}")
+                .setBody(simple("Result is OK"));
+
+//        from(direct("messages"))
+//                .setHeader("Message", jsonpath("$"))
+//                .setHeader("Id", jsonpath("$.id"))
+//                .setHeader("Type", constant("Received"))
+//                .log("${headers}")
+//                .setBody(simple("Result is OK"));
+    }
+
+    private void setTransactionData(Exchange exchange) {
+        Map<String,Object> json = exchange.getIn().getBody(Map.class);
+        String id = json.get("id").toString();
+        exchange.getIn().setHeader("Message", id);
+        exchange.getIn().setHeader("Id", Integer.parseInt(id));
+        exchange.getIn().setHeader("Type", "Received");
     }
     
 }
